@@ -1,0 +1,11 @@
+# node_modules
+node_modules/
+
+# dotenv 环境变量
+.env
+.env.*.local
+
+# 日志文件
+logs
+*.log
+logs/**/*.log
