@@ -1,0 +1,7 @@
+export * from './relations'
+export * from './IComment'
+export * from './IUser'
+export * from './IArticle'
+export * from './ITag'
+export * from './IRole'
+export * from './IPermission'

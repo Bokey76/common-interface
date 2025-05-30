@@ -1,25 +1,21 @@
 import { Model, DataTypes } from "sequelize";
 import { sequelize } from "@/database";
-import {
-  IComment,
-  ICommentCreationAttributes,
-} from "@/interface/models";
+import { IArticle, IArticleCreationAttributes } from '@/interface/models'
 
-export class Comment
-  extends Model<IComment, ICommentCreationAttributes>
-  implements IComment
+export class Article
+  extends Model<IArticle, IArticleCreationAttributes>
+  implements IArticle
 {
   public id!: string;
   public title!: string;
   public content!: string;
   public userId!: string;
   public popularity!: number;
-  public articleId!: string;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 }
 
-Comment.init(
+Article.init(
   {
     id: {
       type: DataTypes.BIGINT,
@@ -36,13 +32,10 @@ Comment.init(
       type: DataTypes.INTEGER,
       defaultValue: 0,
     },
-    articleId: {
-      type: DataTypes.BIGINT,
-    }
   },
   {
     sequelize,
-    tableName: "comments",
+    tableName: "articles",
     timestamps: true,
   }
 );

@@ -1,6 +1,8 @@
-const { sequelize,Sequelize } = require("./mysql");
+import { Sequelize, sequelize } from "./mysql";
+import * as redisClient from './redis'
 
 export {
     sequelize,
-    Sequelize
+    Sequelize,
+    redisClient
 }
