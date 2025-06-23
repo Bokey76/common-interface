@@ -113,10 +113,10 @@ export const streamUploadFile = async ({
 }) => {
   const ext = mime.extension(file.mimetype) || "bin";
   const fullFilename = originalNameOrNot
-      ? `${file.originalname}`
-      : fileName
-      ? `${fileName}.${ext}`
-      : `${uuidv4()}.${ext}`;
+    ? `${file.originalname}`
+    : fileName
+    ? `${fileName}.${ext}`
+    : `${uuidv4()}.${ext}`;
   const objectKey = `${path.replace(/\/$/, "")}/${fullFilename}`;
   const result = await client.putStream(objectKey, file.stream);
   return {
@@ -249,6 +249,29 @@ export const abortAllMultipartUploads = async (objectKey: string) => {
 };
 
 /**
+ * 复制 OSS 文件
+ * @param sourceObjKey 源文件路径，例如：'folder/source.jpg'
+ * @param targetObjKey 目标文件路径，例如：'folder/target.jpg'
+ */
+export const copyFile = async (
+  sourceObjKey: string,
+  targetObjKey: string
+): Promise<Record<string,any>> => {
+  if (!sourceObjKey || !targetObjKey) {
+    error.throwError(`参数不完整❌`, 400);
+  }
+  try {
+    const result = await client.copy(targetObjKey, sourceObjKey);
+    return {
+      ossStatus: result.res.status,
+      url: `https://${OSS_CONFIG.bucket}.${OSS_CONFIG.region}.aliyuncs.com/${targetObjKey}`,
+    }
+  } catch (err) {
+    error.throwError(`OSS 文件复制失败❌ ${err}`);
+  }
+};
+
+/**
  * 获取指定目录下的所有文件
  * @param dir 目录路径
  * @returns 目录下所有文件的基本信息
@@ -293,7 +316,7 @@ export const getFileContent = async (objectKey: string): Promise<string> => {
     }
     return contentBuffer.toString("utf-8");
   } catch (err) {
-    throw new error.CustomError(`获取文件内容失败❌ ${err}`)
+    throw new error.CustomError(`获取文件内容失败❌ ${err}`);
   }
 };
 

@@ -1,47 +1,52 @@
 import { Router } from "express";
 import { network } from "@/middlewares";
 import { file } from "@/utils";
-import * as oss from "@/controllers/oss.controller";
+import * as ossController from "@/controllers/oss.controller";
 
 const router = Router();
 
 // --普通oss操作--
-router.get("/getFilesByDir", oss.getFilesByDir, network.response);
-router.get("/getFileContent", oss.getFileContent, network.response);
-router.get("/getOssSignature", oss.getOssSignature, network.response);
+router.get("/getFilesByDir", ossController.getFilesByDir, network.response);
+router.get("/getFileContent", ossController.getFileContent, network.response);
+router.get("/getOssSignature", ossController.getOssSignature, network.response);
 router.post(
   "/uploadFiles",
   file.multerUploadFiles,
-  oss.putUploadFiles,
+  ossController.putUploadFiles,
   network.response
 );
 router.post(
   "/streamUploadFiles",
   file.multerSingleUpload,
-  oss.streamUploadFile,
+  ossController.streamUploadFile,
   network.response
 );
-router.put("/updateFileContent", oss.updateFileContent, network.response);
-router.delete("/deleteOssFiles", oss.deleteOssFiles, network.response);
+router.post(
+  "/copyFile",
+  ossController.copyFile,
+  network.response
+)
+router.put("/updateFileContent", ossController.updateFileContent, network.response);
+router.delete("/deleteOssFiles", ossController.deleteOssFiles, network.response);
 
 // --分片oss操作--
 router.get(
   "/get-pending-multipart",
-  oss.getUnfinishedUploads,
+  ossController.getUnfinishedUploads,
   network.response
 );
-router.post("/multipart-init", oss.initMultipartUpload, network.response);
+router.post("/multipart-init", ossController.initMultipartUpload, network.response);
 router.post(
   "/multipart-upload-part",
   file.multerSingleUpload,
-  oss.uploadMultipartPart,
+  ossController.uploadMultipartPart,
   network.response
 );
 router.post(
   "/multipart-complete",
-  oss.completeMultipartUpload,
+  ossController.completeMultipartUpload,
   network.response
 );
-router.post("/multipart-abort", oss.abortMultipartUpload, network.response);
+router.post("/multipart-abort", ossController.abortMultipartUpload, network.response);
 
 export default router;

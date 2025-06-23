@@ -152,6 +152,17 @@ export const abortMultipartUpload = async (
   next();
 };
 
+// 复制文件
+export const copyFile = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const { sourceObjKey, targetObjKey } = req.body;
+  res.data = await ossService.copyFile(sourceObjKey, targetObjKey);
+  next()
+};
+
 // 获取路径下所有的文件
 export const getFilesByDir = async (
   req: Request,
