@@ -23,8 +23,15 @@ export const getAll = async ({
     ...(attributes && { attributes }),
     ...(include && { include }),
   };
-  const result = await Models[MainModel].findAll(options);
-  return result;
+  if(options.limit !== undefined&& options.offset !== undefined) {
+    const result = await Models[MainModel].findAndCountAll(options);
+    return {
+      list: result.rows,
+      total: result.count
+    }
+  } else {
+    return await Models[MainModel].findAll(options);
+  }
 };
 
 // 创建
