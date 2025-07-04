@@ -29,7 +29,7 @@ export const getAll = async (
       include.push({
         model: Models[relevanceModel as keyof typeof Models],
         ...(!limitAttributes && { attributes: [] }),
-        ...(!limitThrough && { through: { attributes: [] } }),
+        ...(limitThrough !== undefined && !limitThrough && { through: { attributes: [] } }),
         ...{ required: limitRequired },
         where: format.replaceOpKeys(limitedWhere?.[relevanceModelIndex]) || {},
       });
@@ -93,7 +93,7 @@ export const getAllRelevance = async (
       include = {
         model: (Models as Record<string, typeof Model>)[relevanceModel],
         ...(!limitAttributes && { attributes: [] }),
-        ...(!limitThrough && { through: { attributes: [] } }),
+        ...(limitThrough !== undefined && !limitThrough && { through: { attributes: [] } }),
         ...{ required: limitRequired },
         where: currentLimitedWhere || {},
         include: include ? [include] : [],

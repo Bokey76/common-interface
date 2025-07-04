@@ -3,10 +3,34 @@ import { jwt, error } from "@/utils";
 import { JwtPayload } from "jsonwebtoken";
 import { auth } from "@/models";
 /**
- * token验证中间件函数工厂，验证token，将token内容放入req.user中
- * @param param 参数留白，根据需要添加（eg：权限类型：管理员or普通用户）
- * @returns token验证中间件
+ * @function authJudgeFactory
+ * @description 生成通用的权限认证中间件，适用于 Express 路由。支持基于用户角色（Role）和权限（Permission）的双重校验机制。
+ * 
+ * @param {Object} options - 配置对象
+ * @param {Array<string>} [options.roleCheck] - 指定允许访问该接口的角色名称数组，若用户的角色与其中任意一个匹配，则通过校验
+ * @param {Array<Object>} [options.permissionCheck] - 指定更细粒度的权限校验条件，数组中的任意一项匹配即通过
+ * @param {string} [options.permissionCheck[].name] - 权限名称，可选，若不传表示忽略名称匹配
+ * @param {string} [options.permissionCheck[].action] - 操作类型，可选，支持通配符 "*" 表示任意操作
+ * @param {string} [options.permissionCheck[].resource] - 资源标识，可选，支持通配符 "*" 表示任意资源
+ * 
+ * @returns {Function} Express 中间件函数，自动校验登录用户信息、角色权限与具体操作权限
+ * 
+ * @example
+ * // 仅限管理员角色访问
+ * router.post('/admin/data', authJudgeFactory({ roleCheck: ['admin'] }), handler);
+ * 
+ * @example
+ * // 需要具体权限才能操作
+ * router.delete('/product/:id', authJudgeFactory({
+ *   permissionCheck: [{ action: 'delete', resource: 'product' }]
+ * }), handler);
+ * 
+ * @note
+ * - 中间件自动解析 Authorization 头中的 Bearer Token，校验登录状态
+ * - 校验通过后，将用户信息挂载至 req.user
+ * - 校验失败抛出自定义错误，交由统一错误处理中间件处理
  */
+
 export const authJudgeFactory = ({
   roleCheck,
   permissionCheck,

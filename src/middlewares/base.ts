@@ -113,9 +113,9 @@ export const limitRequestPayloadFactory = ({
         for (let item of req.body) {
           applyFilter(item);
         }
+      } else {
+        applyFilter(req.body);
       }
-    } else {
-      applyFilter(req.body);
     }
     next();
   };
