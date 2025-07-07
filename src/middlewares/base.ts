@@ -1,6 +1,7 @@
 import { get } from "lodash";
 import { Request, Response, NextFunction, RequestHandler } from "express";
 import { format, error } from "@/utils";
+import { User } from "@/models";
 
 /**
  * 中间件工厂：用于限制请求的 query 和 body 中的字段内容，并支持字段替换、删除和属性过滤。
@@ -16,6 +17,9 @@ import { format, error } from "@/utils";
  *    - 用于过滤 req.filteredQuery.attributes，支持以下形式：
  *      - 如果 attributes 是数组，则直接过滤指定字段
  *      - 如果 attributes 是对象，则自动加入 exclude 字段中
+ * 
+ * 4. 指定角色应用限制（applyRole）：
+ *    - 用于指定角色应用，当前请求用户拥有该角色的情况下，才进行限制
  *
  * 特别说明：
  * - 对 req.query 的修改结果会保存在 req.filteredQuery 中，原始 req.query 保留不变
@@ -25,13 +29,15 @@ import { format, error } from "@/utils";
  * @param deleteFields - 要从请求中删除的字段路径数组，如 ['user.password', 'meta.secret']
  * @param replaceFields - 要在请求中设置或更新的字段键值对，如 { 'user.role': 'member' }
  * @param deleteAttributes - 要从 req.query.attributes 中排除的字段名，如 ['password', 'secret']
- *
+ * @param applyRole - 应用限制的role，支持字符串和正则，如 ['Super Admin',/^(?!Super Admin$).+$/]
+ * 
  * 示例用法：
  * ```ts
  * limitRequestPayloadFactory({
  *   deleteFields: ['user.password'],
  *   replaceFields: { 'user.role': 'member' },
- *   deleteAttributes: ['password']
+ *   deleteAttributes: ['password'],
+ *   applyRole: ['Super Admin']
  * })
  * ```
  *
@@ -42,10 +48,12 @@ export const limitRequestPayloadFactory = ({
   deleteFields = [],
   replaceFields = {},
   deleteAttributes = [],
+  applyRole = [],
 }: {
   deleteFields?: string[];
   replaceFields?: Record<string, any>;
   deleteAttributes?: string[];
+  applyRole?: (string | RegExp)[];
 }): RequestHandler => {
   // 应用过滤函数
   const applyFilter = (target: Record<string, any>) => {
@@ -81,6 +89,22 @@ export const limitRequestPayloadFactory = ({
     return target;
   };
   return (req: Request, res: Response, next: NextFunction) => {
+    // 若有权限判断，只作用于指定权限
+    if (applyRole.length > 0) {
+      const roleNames = (req.user as User | undefined)?.Roles?.map(
+        (item) => item.name
+      );
+      const applyOrNot = roleNames?.some((roleName) => {
+        return applyRole.some((item) => {
+          if (typeof item === "string") { // 字符串
+            return item === roleName
+          } else { // 正则
+            return item.test(roleName)
+          }
+        });
+      });
+      if(!applyOrNot) next() // 若不应用就放行
+    }
     if (req.query) {
       req.filteredQuery = applyFilter(format.deepSmartParse(req.query));
       if (deleteAttributes && deleteAttributes.length > 0) {
@@ -136,6 +160,9 @@ export const limitRequestPayloadFactory = ({
  * 2. 替换字段（changeFields）：
  *    - 将 req 中指定的值赋值到 req.body 或 req.filteredQuery 中的目标字段
  *    - 支持对整个 req.body 是数组的情况，逐个设置字段
+ * 
+ * 4. 指定角色应用限制（applyRole）：
+ *    - 用于指定角色应用，当前请求用户拥有该角色的情况下，才进行限制
  *
  * 参数：
  * @param changeFields - 替换字段的映射关系，例如：
@@ -152,6 +179,8 @@ export const limitRequestPayloadFactory = ({
  *      ]
  *    }
  *
+ * @param applyRole - 应用限制的role，支持字符串和正则，如 ['Super Admin',/^(?!Super Admin$).+$/]
+ * 
  * 使用场景举例：
  * - 限制查询路径必须是某些前缀或与当前用户相关
  * - 自动将当前登录用户 ID 写入请求体
@@ -162,6 +191,7 @@ export const limitRequestPayloadFactory = ({
 export const changeOrCheckRequestPayloadFactory = ({
   changeFields = {},
   checkFields = {},
+  applyRole = [],
 }: {
   changeFields?: Record<string, string>;
   checkFields?: Record<
@@ -171,8 +201,25 @@ export const changeOrCheckRequestPayloadFactory = ({
     | Array<string | RegExp | ((value: any, req: Request) => boolean)>
     | ((value: any, req: Request) => boolean)
   >;
+  applyRole?: (string | RegExp)[];
 }) => {
   return (req: Request, res: Response, next: NextFunction) => {
+    // 若有权限判断，只作用于指定权限
+    if (applyRole.length > 0) {
+      const roleNames = (req.user as User | undefined)?.Roles?.map(
+        (item) => item.name
+      );
+      const applyOrNot = roleNames?.some((roleName) => {
+        return applyRole.some((item) => {
+          if (typeof item === "string") { // 字符串
+            return item === roleName
+          } else { // 正则
+            return item.test(roleName)
+          }
+        });
+      });
+      if(!applyOrNot) next() // 若不应用就放行
+    }
     Object.entries(checkFields).forEach(([checkField, sourceValue]) => {
       // 检查函数
       const check = (value: any) => {
